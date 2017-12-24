@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-
+import time
 from random import random
 from gym import Env
 import gym
@@ -24,7 +24,7 @@ env.step(a) 根据选择的动作进行状态转移 a = 0, 1, 2, 3 分别代表�
 
 
 class Agent:
-    def __init__(self, env, gamma, epsilon, alpha):
+    def __init__(self, env, gamma, epsilon, alpha, max_episode):
         self.env = env
         
         self.QTable = pd.DataFrame(columns = list(range(self.env.action_space.n)))
@@ -32,6 +32,7 @@ class Agent:
         self.epsilon = epsilon
         self.alpha = alpha
         self.state = None
+        self.max_episode = max_episode
         self._initAgent()
 
     def _initAgent(self):
@@ -77,25 +78,60 @@ class Agent:
         return action
 
 
-    def learn(self, s, a, r, s_, is_done=False):
+    def update(self, s, a, r, s_, a_):
         self.check_state_exist(s_)
 
         old_Q = self._get_Q(s, a)
 
-        if not is_done:
+        prime_Q = self._get_Q(s_, a_)
 
-            Qtarget = r + self.gamma * self.QTable.ix[s_, :].max() 
-        else:
-            Qtarget = r 
+        Qtarget = r + self.gamma * prime_Q
             
         new_Q = old_Q + self.alpha * (Qtarget - old_Q)
         self._set_Q(s, a, new_Q) #更新Q值
 
 
+    def learning(self):
+        for episode in range(self.max_episode):
+            s = self.env.reset()
+            self.env.render()
+            time_in_episode = 0
+            is_done = False
+            while not is_done:
+                
+                a = self.choose_action(s, episode, use_epsilon=True)
 
+                s_, r, is_done, info = self.env.step(a)
+                
+                #use_epsilon=False 表示是用greedy而不是e-greedy。这是Q learning的做法
+                a_ = self.choose_action(s_, episode, use_epsilon=False)
+
+                #fresh env for display
+                self.env.render()
+
+                self.update(s, a, r, s_, a_)
+
+                s = s_
+                time_in_episode += 1
+
+            print("Episode {0} takes {1} steps. epsilon is {2:.3f}".format(
+                    episode+1, time_in_episode, self.epsilon))
+
+        print('game over!')
+        self.env.destroy()
 
 if __name__ == "__main__":
-    env = GridWorldEnv()
-    agent = Agent(env)
-    
+
+    max_episode = 1000000
+
+    env = SimpleGridWorld()
+
+    agent = Agent(env=env,
+            gamma = 0.9,
+            epsilon = 0.0,
+            alpha = 0.1,
+            max_episode = max_episode)
+
+    agent.learning()
+
 
