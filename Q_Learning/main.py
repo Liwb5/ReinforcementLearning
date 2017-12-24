@@ -14,7 +14,7 @@ def update(agent, env):
         while not is_done:
             
 
-            a = agent.choose_action(s)
+            a = agent.choose_action(s, episode, True)
 
             s_, r, is_done, info = env.step(a)
             

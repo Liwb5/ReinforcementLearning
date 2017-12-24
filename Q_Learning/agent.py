@@ -18,6 +18,7 @@ env.action_space 是动作空间，一般格子世界中，每个状态下的动
 
 
 env.step(a) 根据选择的动作进行状态转移 a = 0, 1, 2, 3 分别代表左 右 上 下
+所以建立Q table的时候，列要用0, 1, 2, 3来表示
  
 '''
 
@@ -37,13 +38,35 @@ class Agent:
         #gridworld文件中也没有定义reset，是gym自带的，可以将格子世界恢复到初始状态，agent经过每个episode之后都要reset一下。
         self.state = self.env.reset()
 
-    def choose_action(self, state):
+    def check_state_exist(self, state):
+        if state not in self.QTable.index:
+            #append new state to Q table
+            self.QTable = self.QTable.append(
+                pd.Series(
+                    [0]*self.env.action_space.n,
+                    index = self.QTable.columns,
+                    name = state,
+                    )
+                )
+
+    def _get_Q(self, s, a):
+        return self.QTable.ix[s, a]
+
+    def _set_Q(self, s, a, value):
+        self.QTable.ix[s, a] = value
+
+
+    def choose_action(self, state, episode_num, use_epsilon):
         self.check_state_exist(state)
 
+        self.epsilon = 1.00 / (episode_num + 1)
+
+        #指数型下降
+        #self.epsilon = math.exp(-(episode_num+80)/80)
+
         #e-greedy algorithm
-        if np.random.uniform() < self.epsilon:
+        if use_epsilon and np.random.uniform() < self.epsilon:
             #random choose an action
-            print('take random action')
             action = self.env.action_space.sample()
         else:
             #choose best action
@@ -53,12 +76,6 @@ class Agent:
 
         return action
 
-
-    def _get_Q(self, s, a):
-        return self.QTable.ix[s, a]
-
-    def _set_Q(self, s, a, value):
-        self.QTable.ix[s, a] = value
 
     def learn(self, s, a, r, s_, is_done=False):
         self.check_state_exist(s_)
@@ -75,16 +92,6 @@ class Agent:
         self._set_Q(s, a, new_Q) #更新Q值
 
 
-    def check_state_exist(self, state):
-        if state not in self.QTable.index:
-            #append new state to Q table
-            self.QTable = self.QTable.append(
-                pd.Series(
-                    [0]*self.env.action_space.n,
-                    index = self.QTable.columns,
-                    name = state,
-                    )
-                )
 
 
 if __name__ == "__main__":
