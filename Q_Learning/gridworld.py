@@ -11,7 +11,7 @@ import gym
 from gym import spaces
 from gym.utils import seeding
 import numpy as np
-
+from gym.envs.classic_control import rendering
 
 # 一个格子类
 class Grid(object):
@@ -139,7 +139,8 @@ class GridWorldEnv(gym.Env):
                        u_size = 40,
                        default_reward:float = 0,
                        default_type = 0,
-                       windy=False):
+                       windy=False,
+                       default_value = 0.0):
         self.u_size = u_size             # 当前格子绘制尺寸
         self.n_width = n_width           # 格子世界宽度（以格子数计）
         self.n_height = n_height         # 高度
@@ -147,13 +148,15 @@ class GridWorldEnv(gym.Env):
         self.height = u_size * n_height  # 场景长度
         self.default_reward = default_reward
         self.default_type = default_type
-        self._adjust_size()
+        self.default_value = default_value
+        self.COLOR = False #用于改变格子世界中每个格子的颜色。True表示要修改，False不修改
+        self._adjust_size() 
 
         self.grids = GridMatrix(n_width = self.n_width,
                                 n_height = self.n_height,
                                 default_reward = self.default_reward,
                                 default_type = self.default_type,
-                                default_value = 0.0)
+                                default_value = self.default_value)
         self.reward = 0         #for rendering
         self.action = None      #for rendering
         self.windy = windy      # 是否是有风格子世界
@@ -282,9 +285,10 @@ class GridWorldEnv(gym.Env):
         u_size = self.u_size
         m = 2       # 格子之间的间隙尺寸
 
+
         # 如果还没有设定屏幕对象，则初始化整个屏幕具备的元素。
         if self.viewer is None:
-            from gym.envs.classic_control import rendering
+            
             self.viewer =rendering.Viewer(self.width, self.height)
 
             # 在Viewer里绘制一个几何图像的步骤如下：
@@ -304,16 +308,26 @@ class GridWorldEnv(gym.Env):
             # 6. 调用Viewer的render()方法进行绘制
             ''' 绘制水平竖直格子线，由于设置了格子之间的间隙，可不用此段代码
             for i in range(self.n_width+1):
-line = rendering.Line(start = (i*u_size, 0),
+                line = rendering.Line(start = (i*u_size, 0),
                                       end =(i*u_size, u_size*self.n_height))
                 line.set_color(0.5,0,0)
                 self.viewer.add_geom(line)
             for i in range(self.n_height):
-line = rendering.Line(start = (0, i*u_size),
+                line = rendering.Line(start = (0, i*u_size),
                                       end = (u_size*self.n_width, i*u_size))
                 line.set_color(0,0,1)
                 self.viewer.add_geom(line)
             '''
+            # states = []
+            # values = []
+            # for x in range(self.n_width):
+            #     for y in range(self.n_height):
+            #         state = self._xy_to_state(x,y)
+            #         states.append(state)
+
+            #         value = self.grids.get_value(x, y)
+            #         values.append(value)
+
 
             # 绘制格子
             for x in range(self.n_width):
@@ -324,13 +338,14 @@ line = rendering.Line(start = (0, i*u_size),
                          (x*u_size+m, (y+1)*u_size-m)]
 
                     rect =rendering.FilledPolygon(v)
-                    r = self.grids.get_reward(x,y)/10
-                    if r < 0:
-                        rect.set_color(0.9-r, 0.9 + r, 0.9 + r)
-                    elif r > 0:
-                        rect.set_color(0.3, 0.5 + r, 0.3)
-                    else:
-                        rect.set_color(0.9,0.9,0.9)
+
+                    # r = self.grids.get_reward(x,y)/10
+                    # if r < 0:
+                    #     rect.set_color(0.9-r, 0.9 + r, 0.9 + r)
+                    # elif r > 0:
+                    #     rect.set_color(0.3, 0.5 + r, 0.3)
+                    # else:
+                    #     rect.set_color(0.9,0.9,0.9)
                     self.viewer.add_geom(rect)
                     # 绘制边框
                     v_outline = [(x*u_size+m, y*u_size+m),
@@ -351,6 +366,7 @@ line = rendering.Line(start = (0, i*u_size),
                         rect.set_color(0.3,0.3,0.3)
                     else:
                         pass
+
             # 绘制个体
             self.agent =rendering.make_circle(u_size/4, 30, True)
             self.agent.set_color(1.0, 1.0, 0.0)
@@ -358,11 +374,67 @@ line = rendering.Line(start = (0, i*u_size),
             self.agent_trans =rendering.Transform()
             self.agent.add_attr(self.agent_trans)
 
+        if self.COLOR:
+            # 绘制格子
+            for x in range(self.n_width):
+                for y in range(self.n_height):
+                    v = [(x*u_size+m, y*u_size+m),
+                         ((x+1)*u_size-m, y*u_size+m),
+                         ((x+1)*u_size-m, (y+1)*u_size-m),
+                         (x*u_size+m, (y+1)*u_size-m)]
+
+                    rect =rendering.FilledPolygon(v)
+
+                    #----------edited-----#
+                    value = self.grids.get_value(x, y)
+                    #print(value)
+                    scopes = np.linspace(0, 1, 7)
+                    c = np.linspace(50, 255, 6)
+                    if value < scopes[0]+0.01:
+                        color = np.array([255,192,203])/255  #粉红色
+                        rect.set_color(color[0], color[1], color[2])
+                    elif value < scopes[1]:
+                        color = np.array([0,c[5],0])/255  #碧绿色
+                        rect.set_color(color[0], color[1], color[2])
+                    elif value < scopes[2]:
+                        color = np.array([0,c[4],0])/255  #适中的碧绿色
+                        rect.set_color(color[0], color[1], color[2])
+                    elif value < scopes[3]:
+                        color = np.array([0,c[3],0])/255  #酸橙色
+                        rect.set_color(color[0], color[1], color[2])
+                    elif value < scopes[4]:
+                        color = np.array([0,c[2],0])/255  #酸橙绿
+                        rect.set_color(color[0], color[1], color[2])
+                    elif value < scopes[5]:
+                        color = np.array([0,c[1],0])/255  #纯绿色
+                        rect.set_color(color[0], color[1], color[2])
+                    else:
+                        color = np.array([0,c[0],0])/255  #深绿
+                        rect.set_color(color[0], color[1], color[2])                        
+
+                    self.viewer.add_geom(rect)
+
+                        # 绘制个体
+            self.agent =rendering.make_circle(u_size/4, 30, True)
+            self.agent.set_color(1.0, 1.0, 0.0)
+            self.viewer.add_geom(self.agent)
+            self.agent_trans =rendering.Transform()
+            self.agent.add_attr(self.agent_trans)
+
+
+
         # 更新个体位置
         x, y = self._state_to_xy(self.state)
         self.agent_trans.set_translation((x+0.5)*u_size, (y+0.5)*u_size)
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
+
+    def set_Q_value(self, state, value):
+        x, y = self._state_to_xy(state)
+        self.grids.set_value(x, y, value)
+
+
+
 
 def LargeGridWorld():
     '''10*10的一个格子世界环境，设置参照：
@@ -390,9 +462,10 @@ def SimpleGridWorld():
     env = GridWorldEnv(n_width=10,
                        n_height = 7,
                        u_size = 60,
-                       default_reward = -1,
+                       default_reward = 0,
                        default_type = 0,
-                       windy=False)
+                       windy=False,
+                       default_value = 0)
     env.start = (0,3)
     env.ends = [(7,3)]
     env.rewards = [(7,3,1)]

@@ -90,11 +90,17 @@ class Agent:
         new_Q = old_Q + self.alpha * (Qtarget - old_Q)
         self._set_Q(s, a, new_Q) #更新Q值
 
+        ##for set v(s) to gridworld
+        value = self.QTable.ix[s, :].max() #获得当前状态state对应的所有动作的Q(state, a)值的最大值
+        self.env.set_Q_value(s, value)
+
 
     def learning(self):
         for episode in range(self.max_episode):
             s = self.env.reset()
+            self.env.COLOR = True
             self.env.render()
+            self.env.COLOR = False
             time_in_episode = 0
             is_done = False
             while not is_done:
@@ -125,6 +131,8 @@ if __name__ == "__main__":
     max_episode = 1000000
 
     env = SimpleGridWorld()
+    #env = CliffWalk()
+    #env = WindyGridWorld()
 
     agent = Agent(env=env,
             gamma = 0.9,
