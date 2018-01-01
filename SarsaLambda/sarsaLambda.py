@@ -186,8 +186,8 @@ if __name__ == "__main__":
 
     max_episode = 1000000
 
-    env = SimpleGridWorld()
-    #env = CliffWalk()
+    #env = SimpleGridWorld()
+    env = CliffWalk()
 
     agent = Agent(env=env,
             gamma = 0.9,

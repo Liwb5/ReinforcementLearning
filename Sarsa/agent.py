@@ -1,11 +1,12 @@
 import numpy as np
 import pandas as pd
 import time
+import math
 from random import random
 from gym import Env
 import gym
 from gridworld import *
-
+from visdom import Visdom
 '''
 gridworld类构建了一些简单的格子世界。
 在格子世界中，每个格子相当于一个状态，状态的描述是按照行来排序的，第x行第y个的状态名为
@@ -33,11 +34,28 @@ class Agent:
         self.alpha = alpha
         self.state = None
         self.max_episode = max_episode
+
+        self.vis = Visdom()
+        assert self.vis.check_connection()
+        self.heatmap = None
+
         self._initAgent()
 
     def _initAgent(self):
         #gridworld文件中也没有定义reset，是gym自带的，可以将格子世界恢复到初始状态，agent经过每个episode之后都要reset一下。
         self.state = self.env.reset()
+
+        for state in range(self.env.observation_space.n):
+            self.QTable = self.QTable.append(
+                pd.Series(
+                    [0]*self.env.action_space.n,
+                    index = self.QTable.columns,
+                    name = state,
+                    )
+                )
+
+        self.heatmap = self.show_heatmap()
+
 
     def check_state_exist(self, state):
         if state not in self.QTable.index:
@@ -92,6 +110,7 @@ class Agent:
 
 
     def learning(self):
+        start = time.time()
         for episode in range(self.max_episode):
             s = self.env.reset()
             #sarsa learning should choose action before loop
@@ -115,18 +134,41 @@ class Agent:
                 a = a_
                 time_in_episode += 1
 
+            #随着agent找到最短路径，一个episode的所需时间越短，刷新显示热点图会太快，所以需要降速
+            end = time.time()
+            if (end - start) < 2:
+                time.sleep(2)
+                start = end
+
+            self.vis.close(self.heatmap)
+            self.heatmap = self.show_heatmap()
+
             print("Episode {0} takes {1} steps. epsilon is {2:.3f}".format(
                     episode+1, time_in_episode, self.epsilon))
 
         print('game over!')
         self.env.destroy()
 
+    def show_heatmap(self):
+        q_table = self.QTable#.sort_index(axis = 0)
+        v_table = q_table.loc[:,:].max(axis = 1) #选择每一行的最大值
+        v_table = v_table.values.reshape(self.env.n_height, self.env.n_width)
+
+        h = self.vis.heatmap(
+            X = v_table,
+            opts = dict(
+                columnnames = list(i for i in range(self.env.n_width)),
+                rownames = list(i for i in range(self.env.n_height)),
+                ))
+        return h
+
+
 if __name__ == "__main__":
 
     max_episode = 1000000
 
-    #env = SimpleGridWorld()
-    env = CliffWalk()
+    env = SimpleGridWorld()
+    #env = CliffWalk()
 
     agent = Agent(env=env,
             gamma = 0.9,
