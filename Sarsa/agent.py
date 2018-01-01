@@ -20,14 +20,14 @@ env.action_space 是动作空间，一般格子世界中，每个状态下的动
 
 env.step(a) 根据选择的动作进行状态转移 a = 0, 1, 2, 3 分别代表左 右 上 下
 所以建立Q table的时候，列要用0, 1, 2, 3来表示
- 
+
 '''
 
 
 class Agent:
     def __init__(self, env, gamma, epsilon, alpha, max_episode):
         self.env = env
-        
+
         self.QTable = pd.DataFrame(columns = list(range(self.env.action_space.n)))
         self.gamma = gamma
         self.epsilon = epsilon
@@ -104,7 +104,7 @@ class Agent:
         prime_Q = self._get_Q(s_, a_)
 
         Qtarget = r + self.gamma * prime_Q
-            
+
         new_Q = old_Q + self.alpha * (Qtarget - old_Q)
         self._set_Q(s, a, new_Q) #更新Q值
 
@@ -121,7 +121,7 @@ class Agent:
             while not is_done:
 
                 s_, r, is_done, info = self.env.step(a)
-                
+
                 #use_epsilon=True 表示是用e-greedy。这是sarsa的做法
                 a_ = self.choose_action(s_, episode, use_epsilon=True)
 
@@ -136,9 +136,11 @@ class Agent:
 
             #随着agent找到最短路径，一个episode的所需时间越短，刷新显示热点图会太快，所以需要降速
             end = time.time()
-            if (end - start) < 2:
+            if (end - start) < 2.0:
                 time.sleep(2)
-                start = end
+
+            start = end
+
 
             self.vis.close(self.heatmap)
             self.heatmap = self.show_heatmap()
@@ -177,5 +179,3 @@ if __name__ == "__main__":
             max_episode = max_episode)
 
     agent.learning()
-
-
