@@ -5,6 +5,7 @@ from random import random
 from gym import Env
 import gym
 from gridworld import *
+from visdom import Visdom
 
 '''
 gridworld类构建了一些简单的格子世界。
@@ -35,11 +36,35 @@ class Agent:
         self.Lambda = Lambda
         self.state = None
         self.max_episode = max_episode
+
+        self.vis = Visdom()
+        assert self.vis.check_connection()
+        self.heatmap = None
         self._initAgent()
 
     def _initAgent(self):
         #gridworld文件中也没有定义reset，是gym自带的，可以将格子世界恢复到初始状态，agent经过每个episode之后都要reset一下。
         self.state = self.env.reset()
+
+        for state in range(self.env.observation_space.n):
+            self.QTable = self.QTable.append(
+                pd.Series(
+                    [0]*self.env.action_space.n,
+                    index = self.QTable.columns,
+                    name = state,
+                    )
+                )
+
+            #append new state to E
+            self.E = self.E.append(
+                pd.Series(
+                    [0]*self.env.action_space.n,
+                    index = self.E.columns,
+                    name = state,
+                    )
+                )
+
+        self.heatmap = self.show_heatmap()
 
     def check_state_exist(self, state):
         if state not in self.QTable.index:
@@ -131,11 +156,31 @@ class Agent:
                 a = a_
                 time_in_episode += 1
 
+            self.vis.close(self.heatmap)
+            self.heatmap = self.show_heatmap()
+
             print("Episode {0} takes {1} steps. epsilon is {2:.3f}".format(
                     episode+1, time_in_episode, self.epsilon))
 
         print('game over!')
         self.env.destroy()
+
+
+    def show_heatmap(self):
+        q_table = self.QTable#.sort_index(axis = 0)
+        v_table = q_table.loc[:,:].max(axis = 1) #选择每一行的最大值
+        v_table = v_table.values.reshape(self.env.n_height, self.env.n_width)
+
+        h = self.vis.heatmap(
+            X = v_table,
+            opts = dict(
+                columnnames = list(i for i in range(self.env.n_width)),
+                rownames = list(i for i in range(self.env.n_height)),
+                ))
+        return h
+            
+
+
 
 if __name__ == "__main__":
 
