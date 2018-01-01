@@ -134,6 +134,9 @@ class Agent:
 
     def learning(self):
         for episode in range(self.max_episode):
+
+            #新回合， E需要清零
+            self.E *= 0
             s = self.env.reset()
             #sarsa learning should choose action before loop
             a = self.choose_action(s, episode, use_epsilon=True)
@@ -180,14 +183,12 @@ class Agent:
         return h
             
 
-
-
 if __name__ == "__main__":
 
     max_episode = 1000000
 
-    #env = SimpleGridWorld()
-    env = CliffWalk()
+    env = SimpleGridWorld()
+    #env = CliffWalk()
 
     agent = Agent(env=env,
             gamma = 0.9,
