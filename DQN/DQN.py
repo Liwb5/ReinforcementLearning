@@ -12,13 +12,14 @@ class DQN:
                 n_features, 
                 lr = 0.01,
                 gamma = 0.9, #奖赏的折扣因子
-                epsilon = 0.1,#随机探索的概率
+                epsilon = 0.9,#随机探索的概率
                 #DQN有两个network，这个参数表示每隔多少步将eval network的参数更新到target network中去。
                 replace_target_iter = 300, 
                 memory_size = 500, #记忆库容量的大小
                 batch_size = 32,
                 epsilon_decreament = None,#随着学习的进行，是否逐渐减少探索的概率
                 drop_out = 0.5,
+                output_graph = False,
                 ):
         self.n_actions = n_actions
         self.n_features = n_features
@@ -30,8 +31,8 @@ class DQN:
         self.batch_size = batch_size
         self.epsilon_decreament = epsilon_decreament
         self.drop_out =drop_out
-        self.epsilon_max = self.epsilon
-        self.epsilon = 0 if epsilon_decreament is not None else self.epsilon
+        #self.epsilon_max = self.epsilon
+        #self.epsilon = 0 if epsilon_decreament is not None else self.epsilon
         
         # total learning step
         self.learn_step_counter = 0 #用于记录学习了多少步
@@ -47,7 +48,10 @@ class DQN:
         self.replace_params_operation = [tf.assign(t, e) for t, e in zip(target_params, eval_params)]
         
         self.sess = tf.Session()
-        
+        if output_graph:
+            # $ tensorboard --logdir=logs
+            # tf.train.SummaryWriter soon be deprecated, use following
+            tf.summary.FileWriter("logsDQN/", self.sess.graph)
         self.sess.run(tf.global_variables_initializer())
         self.cost_his = []#记录loss值，最后画出loss曲线
     
@@ -181,7 +185,7 @@ class DQN:
         #检查是否要将eval_net的参数更新到target_net
         if self.learn_step_counter % self.replace_target_iter == 0:
             self.sess.run(self.replace_params_operation)
-            print('\n target_params_replaced \n')
+            #print('\n target_params_replaced \n')
             
         #说明记忆库已经填满了，可以随机从中采样
         if self.memory_counter > self.memory_size:
@@ -243,8 +247,9 @@ class DQN:
         self.learn_step_counter += 1
         
         #这里需要考虑epsilon随时间变小
-        #if self.epsilon > 0.05:
-        self.epsilon = self.epsilon + self.epsilon_decreament if self.epsilon < self.epsilon_max else self.epsilon_max
+        if self.epsilon > 0.1:
+            self.epsilon = self.epsilon - self.epsilon_decreament
+            
         
     def plot_cost(self):
         import matplotlib.pyplot as plt

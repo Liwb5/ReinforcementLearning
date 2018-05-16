@@ -33,13 +33,13 @@ def CartPole_v0(args):
 
             action = agent.choose_action(observation)
 
-            observation_,reward, done, info = env.step(action)
+            observation_, reward, done, info = env.step(action)
 
             # x: 小车的水平位置, x==0就是在中间位置。
             # theta: 棒与垂直地面的线的夹角，角度越大，棒就越倾向地面，越不稳定。 
             x, x_dot, theta, theta_dot = observation_
-            r1 = (env.x_threshold - abs(x))/env.x_threshold - 0.5
-            r2 = (env.theta_threshold_radians - abs(x))/env.theta_threshold_radians - 0.8
+            r1 = (env.x_threshold - abs(x))/env.x_threshold - 0.8
+            r2 = (env.theta_threshold_radians - abs(theta))/env.theta_threshold_radians - 0.5
 
             reward = r1 + r2
 
@@ -83,13 +83,13 @@ if __name__ == '__main__':
         '--lr',
         type = float,
         default = 0.01,
-        help = 'the learning rate of the model(default = 0.001)')
+        help = 'the learning rate of the model(default = 0.01)')
     
     parser.add_argument(
         '--epoches',
         type = int,
-        default = 1000,
-        help = 'the max number of epoch(default = 1000)')
+        default = 100,
+        help = 'the max number of epoch(default = 100)')
     
     parser.add_argument(
         '--batch_size',
@@ -107,7 +107,7 @@ if __name__ == '__main__':
         '--epsilon',
         type = float,
         default = 0.9,
-        help = 'the e_greedy probability.(default = 0.1) ')
+        help = 'the e_greedy probability.(default = 0.9) ')
     
     #每隔多少步就将eval net的参数更新到target net中
     parser.add_argument(
