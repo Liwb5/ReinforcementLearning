@@ -20,7 +20,7 @@ def CartPole_v0(args):
                 replace_target_iter = args.update_when,
                 memory_size = args.memory_size,
                 batch_size = args.batch_size,
-                epsilon_decreament = 0.000008,
+                epsilon_decreament = 0.0008,
                 drop_out = args.drop_out)
 
     total_step = 0
@@ -106,7 +106,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--epsilon',
         type = float,
-        default = 0.1,
+        default = 0.9,
         help = 'the e_greedy probability.(default = 0.1) ')
     
     #每隔多少步就将eval net的参数更新到target net中

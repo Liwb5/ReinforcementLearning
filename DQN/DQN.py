@@ -30,8 +30,8 @@ class DQN:
         self.batch_size = batch_size
         self.epsilon_decreament = epsilon_decreament
         self.drop_out =drop_out
-        
-        #self.epsilon = 0 if epsilon_decreament is not None else self.epsilon
+        self.epsilon_max = self.epsilon
+        self.epsilon = 0 if epsilon_decreament is not None else self.epsilon
         
         # total learning step
         self.learn_step_counter = 0 #用于记录学习了多少步
@@ -163,7 +163,7 @@ class DQN:
         """
         obsevation = obsevation[np.newaxis, :]
         
-        if np.random.uniform() > self.epsilon:
+        if np.random.uniform() < self.epsilon:
             actions_value = self.sess.run(self.eval_L2, 
                                          feed_dict={self.s: obsevation})#, 
                                                     #self.drop_prob: self.drop_out})
@@ -243,8 +243,8 @@ class DQN:
         self.learn_step_counter += 1
         
         #这里需要考虑epsilon随时间变小
-        if self.epsilon > 0.05:
-            self.epsilon = self.epsilon - self.epsilon_decreament
+        #if self.epsilon > 0.05:
+        self.epsilon = self.epsilon + self.epsilon_decreament if self.epsilon < self.epsilon_max else self.epsilon_max
         
     def plot_cost(self):
         import matplotlib.pyplot as plt
