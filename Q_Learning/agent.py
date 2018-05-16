@@ -19,14 +19,20 @@ env.action_space 是动作空间，一般格子世界中，每个状态下的动
 
 env.step(a) 根据选择的动作进行状态转移 a = 0, 1, 2, 3 分别代表左 右 上 下
 所以建立Q table的时候，列要用0, 1, 2, 3来表示
- 
+
 '''
 
 
 class Agent:
     def __init__(self, env, gamma, epsilon, alpha, max_episode):
+        """
+        env: 环境实例对象，agent就是与env进行交互的。通过交互，env会返回agent的当前状态与即时reward
+        gamma： 折扣因子，一般是0.9
+        epsilon： 探索的概率。使用epsilon-greedy算法时，需要有一定的概率去进行探索
+        alpha：学习率。
+        """
         self.env = env
-        
+        #有时候我们连动作空间有多大都不知道
         self.QTable = pd.DataFrame(columns = list(range(self.env.action_space.n)))
         self.gamma = gamma
         self.epsilon = epsilon
@@ -60,6 +66,7 @@ class Agent:
     def choose_action(self, state, episode_num, use_epsilon):
         self.check_state_exist(state)
 
+        #探索随时间慢慢减少
         self.epsilon = 1.00 / (episode_num + 1)
 
         #指数型下降
@@ -78,7 +85,11 @@ class Agent:
         return action
 
 
+
     def update(self, s, a, r, s_, a_):
+        """
+        brief：更新每个状态动作值函数Q(s,a)
+        """
         self.check_state_exist(s_)
 
         old_Q = self._get_Q(s, a)
@@ -86,7 +97,7 @@ class Agent:
         prime_Q = self._get_Q(s_, a_)
 
         Qtarget = r + self.gamma * prime_Q
-            
+
         new_Q = old_Q + self.alpha * (Qtarget - old_Q)
         self._set_Q(s, a, new_Q) #更新Q值
 
@@ -104,11 +115,11 @@ class Agent:
             time_in_episode = 0
             is_done = False
             while not is_done:
-                
+
                 a = self.choose_action(s, episode, use_epsilon=True)
 
                 s_, r, is_done, info = self.env.step(a)
-                
+
                 #use_epsilon=False 表示是用greedy而不是e-greedy。这是Q learning的做法
                 a_ = self.choose_action(s_, episode, use_epsilon=False)
 
@@ -133,7 +144,7 @@ if __name__ == "__main__":
     env = SimpleGridWorld()
     #env = CliffWalk()
     #env = WindyGridWorld()
-
+    
     agent = Agent(env=env,
             gamma = 0.9,
             epsilon = 0.0,
@@ -141,5 +152,3 @@ if __name__ == "__main__":
             max_episode = max_episode)
 
     agent.learning()
-
-

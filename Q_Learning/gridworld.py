@@ -1,10 +1,4 @@
 # -*-coding: utf-8 -*-
-"""
-General GridWorld Environment
-Author: Qiang Ye
-Date: July 22, 2017
-License: MIT
-"""
 
 import math
 import gym
@@ -150,7 +144,7 @@ class GridWorldEnv(gym.Env):
         self.default_type = default_type
         self.default_value = default_value
         self.COLOR = False #用于改变格子世界中每个格子的颜色。True表示要修改，False不修改
-        self._adjust_size() 
+        self._adjust_size()
 
         self.grids = GridMatrix(n_width = self.n_width,
                                 n_height = self.n_height,
@@ -288,7 +282,7 @@ class GridWorldEnv(gym.Env):
 
         # 如果还没有设定屏幕对象，则初始化整个屏幕具备的元素。
         if self.viewer is None:
-            
+
             self.viewer =rendering.Viewer(self.width, self.height)
 
             # 在Viewer里绘制一个几何图像的步骤如下：
@@ -375,7 +369,8 @@ class GridWorldEnv(gym.Env):
             self.agent.add_attr(self.agent_trans)
 
         if self.COLOR:
-            # 绘制格子
+            """根据格子的value绘制颜色，value越大，颜色越深
+            """
             for x in range(self.n_width):
                 for y in range(self.n_height):
                     v = [(x*u_size+m, y*u_size+m),
@@ -410,7 +405,7 @@ class GridWorldEnv(gym.Env):
                         rect.set_color(color[0], color[1], color[2])
                     else:
                         color = np.array([0,c[0],0])/255  #深绿
-                        rect.set_color(color[0], color[1], color[2])                        
+                        rect.set_color(color[0], color[1], color[2])
 
                     self.viewer.add_geom(rect)
 
