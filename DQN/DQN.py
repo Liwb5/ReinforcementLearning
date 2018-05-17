@@ -167,7 +167,7 @@ class DQN:
         """
         obsevation = obsevation[np.newaxis, :]
         
-        if np.random.uniform() < self.epsilon:
+        if np.random.uniform() > self.epsilon:
             actions_value = self.sess.run(self.eval_L2, 
                                          feed_dict={self.s: obsevation})#, 
                                                     #self.drop_prob: self.drop_out})
@@ -185,7 +185,7 @@ class DQN:
         #检查是否要将eval_net的参数更新到target_net
         if self.learn_step_counter % self.replace_target_iter == 0:
             self.sess.run(self.replace_params_operation)
-            #print('\n target_params_replaced \n')
+            print('\n target_params_replaced \n')
             
         #说明记忆库已经填满了，可以随机从中采样
         if self.memory_counter > self.memory_size:
