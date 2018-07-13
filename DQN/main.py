@@ -1,3 +1,4 @@
+#coding:utf-8
 from DQN import DQN
 import gym
 import argparse
