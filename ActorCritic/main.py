@@ -17,7 +17,7 @@ np.random.seed(1667)
 tf.set_random_seed(1667)
 
 # Superparameters
-OUTPUT_GRAPH =True 
+OUTPUT_GRAPH =False
 MAX_EPISODE = 3000
 DISPLAY_REWARD_THRESHOLD = 200  # renders environment if total episode reward is greater then this threshold
 MAX_EP_STEPS = 1000   # maximum time step in one episode
@@ -76,11 +76,11 @@ if __name__ == '__main__':
             if done or t>=MAX_EP_STEPS:
                 ep_rs_sum = sum(track_r)
 
-		if 'running_reward' not in globals():
-		    running_reward = ep_rs_sum
-		else:
-		    running_reward = running_reward * 0.95 + ep_rs_sum * 0.05
-		if running_reward > DISPLAY_REWARD_THRESHOLD: RENDER = True  # rendering
-		print("episode:", epoch, "  reward:", int(running_reward))
-		break
+                if 'running_reward' not in globals():
+                    running_reward = ep_rs_sum
+                else:
+                    running_reward = running_reward * 0.95 + ep_rs_sum * 0.05
+                if running_reward > DISPLAY_REWARD_THRESHOLD: RENDER = True  # rendering
+                print("episode:", epoch, "  reward:", int(ep_rs_sum))
+                break
 

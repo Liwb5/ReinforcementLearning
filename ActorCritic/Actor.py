@@ -58,7 +58,7 @@ class Actor(object):
     def choose_action(self, s):
         s = s[np.newaxis, :]
         probs = self.sess.run(self.acts_prob, {self.s: s}) #get probabilities of all actions
-        return np.random.choice(np.arange(probs.shape[1]), p=probs.ravel())
+        return np.random.choice(np.arange(probs.shape[1]), p=probs.ravel()) 
 
 
 
