@@ -12,16 +12,17 @@ BATCH_SIZE = 32
 
 
 class DDPG(object):
-    def __init__(self, a_dim, s_dim, a_bound,):
-        self.memory = np.zeros((MEMORY_CAPACITY, s_dim * 2 + a_dim + 1), dtype=np.float32)
+    def __init__(self, config, env):
+        self.config = config
+        self.a_dim, self.s_dim, self.a_bound = env.action_dim, env.state_dim, env.action_bound[1]
+        self.memory = np.zeros((self.config.memory_size, self.s_dim * 2 + self.a_dim + 1), dtype=np.float32)
         self.pointer = 0
         self.memory_full = False
         self.sess = tf.Session()
         self.a_replace_counter, self.c_replace_counter = 0, 0
 
-        self.a_dim, self.s_dim, self.a_bound = a_dim, s_dim, a_bound[1]
-        self.S = tf.placeholder(tf.float32, [None, s_dim], 's')
-        self.S_ = tf.placeholder(tf.float32, [None, s_dim], 's_')
+        self.S = tf.placeholder(tf.float32, [None, self.s_dim], 's')
+        self.S_ = tf.placeholder(tf.float32, [None, self.s_dim], 's_')
         self.R = tf.placeholder(tf.float32, [None, 1], 'r')
 
         with tf.variable_scope('Actor'):
@@ -40,16 +41,16 @@ class DDPG(object):
         self.ct_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target')
 
         # target net replacement
-        self.soft_replace = [[tf.assign(ta, (1 - TAU) * ta + TAU * ea), tf.assign(tc, (1 - TAU) * tc + TAU * ec)]
+        self.soft_replace = [[tf.assign(ta, (1 - self.config.TAU) * ta + self.config.TAU * ea), tf.assign(tc, (1 - self.config.TAU) * tc + self.config.TAU * ec)]
                              for ta, ea, tc, ec in zip(self.at_params, self.ae_params, self.ct_params, self.ce_params)]
 
-        q_target = self.R + GAMMA * q_
+        q_target = self.R + self.config.gamma* q_
         # in the feed_dic for the td_error, the self.a should change to actions in memory
         td_error = tf.losses.mean_squared_error(labels=q_target, predictions=q)
-        self.ctrain = tf.train.AdamOptimizer(LR_C).minimize(td_error, var_list=self.ce_params)
+        self.ctrain = tf.train.AdamOptimizer(self.config.lr_c).minimize(td_error, var_list=self.ce_params)
 
         a_loss = - tf.reduce_mean(q)    # maximize the q
-        self.atrain = tf.train.AdamOptimizer(LR_A).minimize(a_loss, var_list=self.ae_params)
+        self.atrain = tf.train.AdamOptimizer(self.config.lr_a).minimize(a_loss, var_list=self.ae_params)
 
         self.sess.run(tf.global_variables_initializer())
 
@@ -60,7 +61,7 @@ class DDPG(object):
         # soft target replacement
         self.sess.run(self.soft_replace)
 
-        indices = np.random.choice(MEMORY_CAPACITY, size=BATCH_SIZE)
+        indices = np.random.choice(self.config.memory_size, size=self.config.batch_size)
         bt = self.memory[indices, :]
         bs = bt[:, :self.s_dim]
         ba = bt[:, self.s_dim: self.s_dim + self.a_dim]
@@ -72,10 +73,10 @@ class DDPG(object):
 
     def store_transition(self, s, a, r, s_):
         transition = np.hstack((s, a, [r], s_))
-        index = self.pointer % MEMORY_CAPACITY  # replace the old memory with new memory
+        index = self.pointer % self.config.memory_size  # replace the old memory with new memory
         self.memory[index, :] = transition
         self.pointer += 1
-        if self.pointer > MEMORY_CAPACITY:      # indicator for learning
+        if self.pointer > self.config.memory_size:      # indicator for learning
             self.memory_full = True
 
     def _build_a(self, s, scope, trainable):

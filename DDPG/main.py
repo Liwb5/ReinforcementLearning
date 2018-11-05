@@ -12,13 +12,14 @@ if __name__=='__main__':
     # env = gym.make(config.env_name)
     # env = env.unwrapped
     # env.seed(1667)
+    print('third test')
     env = ArmEnv()
     a_dim = env.action_dim
     s_dim = env.state_dim
     a_bound = env.action_bound
 
 
-    ddpg = DDPG(a_dim, s_dim, a_bound)
+    ddpg = DDPG(config, env)
 
     for episode in range(config.max_episodes):
         s = env.reset()
