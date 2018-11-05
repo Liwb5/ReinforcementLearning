@@ -4,22 +4,19 @@ import sys
 import gym
 from config import config
 from DDPG import DDPG
-from env import ArmEnv
 
 
 if __name__=='__main__':
     config = config()
-    # env = gym.make(config.env_name)
-    # env = env.unwrapped
-    # env.seed(1667)
-    print('third test')
-    env = ArmEnv()
-    a_dim = env.action_dim
-    s_dim = env.state_dim
-    a_bound = env.action_bound
+    env = gym.make(config.env_name)
+    env = env.unwrapped
+    env.seed(1667)
 
+    a_dim = env.action_space.shape[0]
+    s_dim = env.observation_space.shape[0]
+    a_bound = env.action_space.high
 
-    ddpg = DDPG(config, env)
+    ddpg = DDPG(config, a_dim, s_dim, a_bound)
 
     for episode in range(config.max_episodes):
         s = env.reset()
